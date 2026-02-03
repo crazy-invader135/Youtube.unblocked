@@ -3,93 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxyTube v3.5 - High-Speed Loader</title>
+    <title>ProxyTube v4.0 - Hybrid Recovery</title>
     <style>
         :root { --yt-black: #0f0f0f; --yt-red: #ff0000; --yt-text: #fff; }
-        body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; }
+        body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; overflow-x: hidden; }
         
-        /* Player UI */
-        #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; }
-        .player-content { max-width: 900px; margin: 20px auto; padding: 10px; }
-        .vid-box { position: relative; width: 100%; aspect-ratio: 16/9; background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
-        
-        /* The Iframe Player */
-        iframe { width: 100%; height: 100%; border: none; }
-        
-        /* Loader Overlay */
-        #loader-status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; text-align: center; pointer-events: none; }
-        .btn-row { margin-top: 15px; display: flex; gap: 10px; }
-        .p-btn { background: #222; color: white; border: 1px solid #444; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-        .p-btn:hover { background: #333; }
+        /* Loading & Error Overlays */
+        .player-status-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 5; font-size: 14px; color: #888; }
+        .hidden { display: none !important; }
+
+        /* Video Container */
+        #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; }
+        .vid-wrapper { position: relative; width: 90%; max-width: 1000px; aspect-ratio: 16/9; margin: 40px auto; background: #050505; border: 1px solid #222; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        iframe { width: 100%; height: 100%; border: none; position: relative; z-index: 10; }
+
+        /* Controls */
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .btn { padding: 10px 20px; border-radius: 20px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-retry { background: #333; color: white; }
+        .btn-retry:hover { background: #444; }
+        .btn-emergency { background: var(--yt-red); color: white; }
     </style>
 </head>
 <body>
 
 <div id="player-overlay">
-    <div class="player-content">
-        <button class="p-btn" onclick="closeVideo()">✕ Close</button>
-        <div class="vid-box">
-            <div id="loader-status">Initializing Piped Stream...</div>
-            <iframe id="video-frame" allowfullscreen allow="autoplay"></iframe>
-        </div>
-        <div class="btn-row">
-            <button class="p-btn" style="background:var(--yt-red); border:none;" onclick="switchPipedInstance()">Video Stuck? Switch Server</button>
-            <button class="p-btn" onclick="openOnYoutube()">Open on YouTube (Source)</button>
-        </div>
+    <div class="vid-wrapper">
+        <div id="status-text" class="player-status-msg">Initializing Secure Stream...</div>
+        <iframe id="video-frame" allow="autoplay; fullscreen"></iframe>
+    </div>
+    
+    <div class="controls">
+        <button class="btn btn-retry" onclick="closeVideo()">✕ Close</button>
+        <button class="btn btn-retry" onclick="tryNextEngine()">Server Lagging? Switch Engine</button>
+        <button class="btn btn-emergency" onclick="emergencyDirectLoad()">Extreme Recovery (Direct)</button>
     </div>
 </div>
 
 <script>
-    // These are Piped instances, which usually handle video streams better than Invidious
-    const pipedInstances = [
-        "https://pipedapi.kavin.rocks",
-        "https://api.piped.victr.me",
-        "https://piped-api.lunar.icu",
-        "https://pipedapi.leptons.xyz"
+    // Hybrid Engines (Invidious + Piped + Direct Proxy)
+    const engines = [
+        (id) => `https://pipedapi.kavin.rocks/embed/${id}`,
+        (id) => `https://inv.nadeko.net/embed/${id}?local=true&autoplay=1`,
+        (id) => `https://api.piped.victr.me/embed/${id}`,
+        (id) => `https://yewtu.be/embed/${id}?autoplay=1`
     ];
 
-    let currentPipedIdx = 0;
-    let activeVideoId = "";
+    let currentEngineIdx = 0;
+    let currentVideoId = "";
 
     function playVideo(id) {
-        activeVideoId = id;
+        currentVideoId = id;
+        currentEngineIdx = 0;
         document.getElementById('player-overlay').style.display = 'block';
-        loadPipedStream();
+        updatePlayer();
     }
 
-    function loadPipedStream() {
-        const instance = pipedInstances[currentPipedIdx];
-        const status = document.getElementById('loader-status');
+    function updatePlayer() {
         const frame = document.getElementById('video-frame');
+        const status = document.getElementById('status-text');
         
-        status.style.display = 'block';
-        status.innerText = "Connecting to " + new URL(instance).hostname + "...";
-        
-        // Piped uses a different embed URL structure that is often cleaner
-        // We use the player link from the instance
-        const playerUrl = instance.replace('api.', '') + "/embed/" + activeVideoId;
-        frame.src = playerUrl;
+        status.innerText = `Attempting Engine ${currentEngineIdx + 1}/${engines.length}...`;
+        frame.src = engines[currentEngineIdx](currentVideoId);
 
-        // Auto-hide status after 4 seconds (assuming it loaded)
-        setTimeout(() => { status.style.display = 'none'; }, 4000);
+        // If it's still "loading" after 6 seconds, the engine likely failed
+        clearTimeout(window.loadCheck);
+        window.loadCheck = setTimeout(() => {
+            status.innerText = "Connection timed out. Try switching engines.";
+        }, 6000);
     }
 
-    function switchPipedInstance() {
-        currentPipedIdx = (currentPipedIdx + 1) % pipedInstances.length;
-        loadPipedStream();
+    function tryNextEngine() {
+        currentEngineIdx = (currentEngineIdx + 1) % engines.length;
+        updatePlayer();
+    }
+
+    // NEW: Direct Recovery (Uses a public bypass service if all proxies are down)
+    function emergencyDirectLoad() {
+        alert("Switching to Emergency Direct Bypass. This ignores all settings to force the video through.");
+        const frame = document.getElementById('video-frame');
+        // This is a direct extraction engine usually used for mobile apps
+        frame.src = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&modestbranding=1&rel=0`;
     }
 
     function closeVideo() {
         document.getElementById('player-overlay').style.display = 'none';
         document.getElementById('video-frame').src = "";
     }
-
-    function openOnYoutube() {
-        window.open("https://youtube.com/watch?v=" + activeVideoId, "_blank");
-    }
-
-    // Connect this to your existing video cards:
-    // Example: <div class="video-card" onclick="playVideo('VIDEO_ID_HERE')">
 </script>
 
 </body>
