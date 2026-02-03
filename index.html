@@ -3,51 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxyTube v3.0 - High Reliability</title>
+    <title>ProxyTube v4.5 - Max Servers</title>
     <style>
         :root { --yt-black: #0f0f0f; --yt-red: #ff0000; --yt-text: #fff; --sidebar-w: 240px; }
         body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
         header { display: flex; align-items: center; padding: 10px 20px; background: var(--yt-black); border-bottom: 1px solid #222; height: 56px; flex-shrink: 0; }
         .main-layout { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Sidebar */
         #sidebar { width: var(--sidebar-w); background: #0f0f0f; border-right: 1px solid #222; padding: 15px; overflow-y: auto; flex-shrink: 0; }
         .nav-item { padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; font-weight: bold; }
         .nav-item:hover { background: #272727; }
-
-        /* Content Area */
         #main-view { flex: 1; overflow-y: auto; padding: 20px; }
         #content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .video-card { cursor: pointer; transition: transform 0.2s; }
-        .video-card:hover { transform: scale(1.02); }
         .thumb { width: 100%; border-radius: 12px; aspect-ratio: 16/9; background: #222; object-fit: cover; }
-        .v-title { font-weight: bold; font-size: 14px; margin-top: 10px; }
-
-        /* Advanced Player Overlay */
+        .v-title { font-weight: bold; font-size: 14px; margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; overflow-y: auto; }
         .player-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
         .video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #111; border-radius: 12px; overflow: hidden; }
         #video-frame { width: 100%; height: 100%; border: none; }
-        
-        /* Status Bar */
-        #player-status { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; font-size: 12px; color: #0f0; }
-        .retry-btn { background: var(--yt-red); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .status-pill { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #0f0; border: 1px solid #333; }
+        .retry-btn { background: var(--yt-red); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: bold; font-size: 20px; cursor: pointer;" onclick="loadTrending()">▶ ProxyTube Pro</div>
+    <div style="font-weight:bold; font-size:20px; cursor:pointer;" onclick="location.reload()">▶ ProxyTube Pro</div>
     <div style="flex:1; display:flex; justify-content:center;">
-        <input type="text" id="search-input" placeholder="Search videos..." style="width:50%; padding:10px; border-radius:20px; border:1px solid #333; background:#121212; color:white;">
+        <input type="text" id="search-input" placeholder="Search across 15+ servers..." style="width:50%; padding:10px; border-radius:20px; border:1px solid #333; background:#121212; color:white;">
     </div>
 </header>
 
 <div class="main-layout">
     <div id="sidebar">
         <div class="nav-item" onclick="loadTrending()">🔥 Trending</div>
-        <div class="nav-item" onclick="alert('History & Subs preserved!')">📁 Library</div>
+        <div class="nav-item" onclick="alert('Local library active.')">📁 Library</div>
     </div>
     <div id="main-view">
         <h2 id="view-title">Trending</h2>
@@ -57,49 +47,51 @@
 
 <div id="player-overlay">
     <div class="player-container">
-        <button style="background:none; border:none; color:white; cursor:pointer; font-size:18px; margin-bottom:10px;" onclick="closeVideo()">✕ Close Player</button>
+        <button style="background:none; border:none; color:white; cursor:pointer; font-size:18px; margin-bottom:10px;" onclick="closeVideo()">✕ Back</button>
         <div class="video-wrapper">
-            <div id="player-status">Connected</div>
+            <div id="player-status" class="status-pill">Primary Engine</div>
             <iframe id="video-frame" allowfullscreen allow="autoplay"></iframe>
         </div>
         <div id="player-meta" style="margin-top:20px;">
-            <h1 id="v-title-display" style="font-size: 22px;"></h1>
-            <p id="v-author-display" style="color: #aaa;"></p>
-            <button class="retry-btn" onclick="retryDifferentInstance()">Video not loading? Try another server</button>
+            <h1 id="v-title-display" style="font-size: 22px; margin:0;"></h1>
+            <p id="v-author-display" style="color: #aaa; margin: 5px 0 15px 0;"></p>
+            <button class="retry-btn" onclick="retryDifferentServer()">Server Blackout? Jump to Next Server</button>
+            <p style="font-size: 12px; color: #555; margin-top: 10px;">If the video is black, YouTube is blocking the current server. Click the red button to swap.</p>
         </div>
     </div>
 </div>
 
 <script>
-    // Updated 2026 Stable Instance List
-    const instances = [
-        "https://inv.nadeko.net",
-        "https://invidious.f5.si",
-        "https://iv.melmac.space",
-        "https://invidious.nerdvpn.de",
-        "https://yewtu.be",
-        "https://invidious.lunar.icu"
+    // MASSIVE 2026 SERVER POOL
+    const invidiousInstances = [
+        "https://inv.nadeko.net", "https://invidious.f5.si", "https://iv.melmac.space", 
+        "https://invidious.nerdvpn.de", "https://yewtu.be", "https://invidious.lunar.icu",
+        "https://inv.nand.ge", "https://invidious.jing.rocks", "https://inv.tux.digital",
+        "https://invidious.incogniweb.net", "https://iv.datura.network"
     ];
-    
-    let currentInstanceIdx = 0;
+
+    const pipedInstances = [
+        "https://pipedapi.kavin.rocks", "https://api.piped.victr.me", 
+        "https://piped-api.lunar.icu", "https://pipedapi.leptons.xyz"
+    ];
+
+    let currentIdx = 0;
     let currentVideoId = "";
 
     async function apiRequest(endpoint) {
-        for (let i = 0; i < instances.length; i++) {
-            let idx = (currentInstanceIdx + i) % instances.length;
+        for (let i = 0; i < invidiousInstances.length; i++) {
+            let idx = (currentIdx + i) % invidiousInstances.length;
             try {
-                const response = await fetch(`${instances[idx]}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(3000) });
-                if (response.ok) {
-                    currentInstanceIdx = idx; 
-                    return await response.json();
-                }
-            } catch (e) { continue; }
+                const res = await fetch(`${invidiousInstances[idx]}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(2500) });
+                if (res.ok) { currentIdx = idx; return await res.json(); }
+            } catch (e) {}
         }
         return null;
     }
 
     async function loadTrending() {
-        document.getElementById('content-grid').innerHTML = "Loading...";
+        const grid = document.getElementById('content-grid');
+        grid.innerHTML = "<p>Scanning servers for trending data...</p>";
         const data = await apiRequest('trending');
         renderVideos(data);
     }
@@ -107,12 +99,14 @@
     function renderVideos(videos) {
         const grid = document.getElementById('content-grid');
         grid.innerHTML = "";
-        videos?.forEach(v => {
+        if (!videos) { grid.innerHTML = "All servers are currently busy. Try searching or refresh."; return; }
+        videos.forEach(v => {
+            if (!v.videoId) return;
             const card = document.createElement('div');
             card.className = "video-card";
             card.onclick = () => playVideo(v.videoId, v.title, v.author);
             card.innerHTML = `
-                <img class="thumb" src="${v.videoThumbnails[0].url}">
+                <img class="thumb" src="${v.videoThumbnails ? v.videoThumbnails[0].url : ''}">
                 <div class="v-title">${v.title}</div>
                 <div style="color:#aaa; font-size:12px; margin-top:4px;">${v.author}</div>
             `;
@@ -129,15 +123,24 @@
     }
 
     function updateFrame() {
+        const frame = document.getElementById('video-frame');
         const status = document.getElementById('player-status');
-        const instance = instances[currentInstanceIdx];
-        status.innerText = "Server: " + new URL(instance).hostname;
         
-        document.getElementById('video-frame').src = `${instance}/embed/${currentVideoId}?autoplay=1&local=true&dark_mode=true`;
+        // Strategy: First 3 retries use Invidious, following retries swap to Piped Embeds
+        if (currentIdx < invidiousInstances.length) {
+            const host = invidiousInstances[currentIdx];
+            status.innerText = "Invidious Engine: " + new URL(host).hostname;
+            frame.src = `${host}/embed/${currentVideoId}?autoplay=1&local=true`;
+        } else {
+            const pIdx = currentIdx % pipedInstances.length;
+            const host = pipedInstances[pIdx];
+            status.innerText = "Piped Engine: " + new URL(host).hostname;
+            frame.src = host.replace('api.', '') + "/embed/" + currentVideoId;
+        }
     }
 
-    function retryDifferentInstance() {
-        currentInstanceIdx = (currentInstanceIdx + 1) % instances.length;
+    function retryDifferentServer() {
+        currentIdx = (currentIdx + 1) % (invidiousInstances.length + pipedInstances.length);
         updateFrame();
     }
 
