@@ -3,46 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxyTube v5.5 - Social Update</title>
+    <title>ProxyTube v6.0 - High Uptime</title>
     <style>
         :root { --yt-black: #0f0f0f; --yt-red: #ff0000; --yt-text: #fff; --sidebar-w: 240px; }
         body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         header { display: flex; align-items: center; padding: 10px 20px; background: var(--yt-black); border-bottom: 1px solid #222; height: 56px; flex-shrink: 0; }
+        #search-input { margin-left:20px; width:40%; padding:8px 20px; border-radius:20px; background:#121212; border:1px solid #333; color:white; }
         .main-layout { display: flex; flex: 1; overflow: hidden; }
         #sidebar { width: var(--sidebar-w); background: #0f0f0f; border-right: 1px solid #222; padding: 15px; overflow-y: auto; flex-shrink: 0; }
-        .nav-item { padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; font-weight: bold; }
-        #main-view { flex: 1; overflow-y: auto; padding: 20px; }
-        #content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .nav-item { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; font-weight: bold; transition: 0.2s; }
+        .nav-item:hover { background: #272727; }
+        #main-view { flex: 1; overflow-y: auto; padding: 20px; background: #000; }
+        #content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
         .video-card { cursor: pointer; }
         .thumb { width: 100%; border-radius: 12px; aspect-ratio: 16/9; background: #222; object-fit: cover; }
         
-        /* Player & Social UI */
         #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; overflow-y: auto; }
-        .player-container { max-width: 1000px; margin: 20px auto; padding: 20px; }
-        .vid-box { width: 100%; aspect-ratio: 16/9; background: #111; border-radius: 12px; overflow: hidden; }
+        .player-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        .vid-box { width: 100%; aspect-ratio: 16/9; background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
         iframe { width: 100%; height: 100%; border: none; }
         
-        .channel-row { display: flex; align-items: center; gap: 15px; margin-top: 20px; padding-bottom: 15px; border-bottom: 1px solid #222; }
-        .channel-pfp { width: 45px; height: 45px; border-radius: 50%; background: #333; }
-        .sub-btn { background: #fff; color: #000; border: none; padding: 8px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        .sub-btn.active { background: #333; color: #fff; }
-        
-        .description-box { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; color: #eee; max-height: 200px; overflow-y: auto; }
-        .btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; color: white; margin-right: 5px; }
-        .btn-red { background: var(--yt-red); }
+        .meta-area { background: #111; padding: 20px; border-radius: 12px; margin-top: 15px; border: 1px solid #222; }
+        .channel-info { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .pfp { width: 48px; height: 48px; border-radius: 50%; background: #333; }
+        .btn-group { display: flex; gap: 10px; margin: 15px 0; }
+        .btn { padding: 10px 18px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-switch { background: #ff8800; color: #000; }
+        .btn-sub { background: #fff; color: #000; }
+        .btn-sub.active { background: #333; color: #fff; }
+        .desc { font-size: 14px; color: #ccc; white-space: pre-wrap; margin-top: 15px; border-top: 1px solid #222; pt:15px; }
+        #status-bar { font-size: 11px; color: #0f0; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <header>
     <div style="font-weight:bold; font-size:20px; cursor:pointer;" onclick="location.reload()">▶ ProxyTube</div>
-    <input type="text" id="search-input" placeholder="Search..." style="margin-left:20px; width:40%; padding:8px 20px; border-radius:20px; background:#121212; border:1px solid #333; color:white;">
+    <input type="text" id="search-input" placeholder="Search across all proxies...">
 </header>
 
 <div class="main-layout">
     <div id="sidebar">
-        <div class="nav-item" onclick="loadTrending()">🔥 Trending</div>
-        <div class="nav-item" onclick="showSubs()">🔔 Subscriptions</div>
+        <div class="nav-item" onclick="loadTrending()">Homepage</div>
+        <div class="nav-item" onclick="showSubs()">Subscriptions</div>
     </div>
     <div id="main-view">
         <h2 id="view-title">Trending</h2>
@@ -52,122 +55,128 @@
 
 <div id="player-overlay">
     <div class="player-container">
-        <button class="btn" style="background:#333; margin-bottom:10px;" onclick="closeVideo()">✕ Close</button>
+        <button class="btn" style="background:#333; color:white; margin-bottom:10px;" onclick="closeVideo()">✕ Back</button>
+        <div id="status-bar">Server Active: Scanning...</div>
         <div class="vid-box">
             <iframe id="video-frame" allowfullscreen allow="autoplay"></iframe>
         </div>
         
-        <h1 id="v-title-display" style="font-size: 20px; margin: 15px 0 0 0;"></h1>
-        
-        <div class="channel-row">
-            <img id="v-channel-pfp" class="channel-pfp" src="">
-            <div style="flex:1">
-                <div id="v-author-display" style="font-weight:bold; cursor:pointer;" onclick="openChannel()"></div>
-                <div id="v-sub-count" style="font-size:12px; color:#aaa;"></div>
+        <div class="meta-area">
+            <h1 id="v-title" style="font-size: 22px; margin:0 0 15px 0;"></h1>
+            <div class="channel-info">
+                <img id="v-pfp" class="pfp">
+                <div style="flex:1">
+                    <div id="v-author" style="font-weight:bold; font-size:18px;"></div>
+                    <div id="v-subs" style="font-size:12px; color:#888;"></div>
+                </div>
+                <div class="btn-group">
+                    <button id="v-sub-btn" class="btn btn-sub" onclick="toggleSubscribe()">Subscribe</button>
+                    <button class="btn btn-switch" onclick="switchServer()">Next Working Server ➔</button>
+                </div>
             </div>
-            <button id="v-sub-btn" class="sub-btn" onclick="toggleSubscribe()">Subscribe</button>
-            <button class="btn btn-red" onclick="retryDifferentServer()">Switch Server</button>
+            <div id="v-desc" class="desc"></div>
         </div>
-
-        <div id="v-description" class="description-box"></div>
     </div>
 </div>
 
 <script>
-    const instances = ["https://inv.nadeko.net", "https://invidious.f5.si", "https://iv.melmac.space"];
-    let currentIdx = 0;
-    let currentId = "";
-    let currentChannelId = "";
-    let currentAuthorName = "";
+    // UPDATED 2026 STABLE SERVER LIST
+    const serverPool = [
+        "https://invidious.nerdvpn.de",
+        "https://inv.nadeko.net",
+        "https://invidious.f5.si",
+        "https://iv.melmac.space",
+        "https://yewtu.be",
+        "https://iv.datura.network",
+        "https://invidious.lunar.icu"
+    ];
+    
+    let currentServerIdx = 0;
+    let currentVideoId = "";
+    let currentAuthorId = "";
 
-    async function apiRequest(endpoint) {
-        for (let i = 0; i < instances.length; i++) {
-            let idx = (currentIdx + i) % instances.length;
+    async function tryRequest(endpoint) {
+        // Try all servers until one works
+        for (let i = 0; i < serverPool.length; i++) {
+            let attemptIdx = (currentServerIdx + i) % serverPool.length;
             try {
-                const res = await fetch(`${instances[idx]}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(3000) });
-                if (res.ok) { currentIdx = idx; return await res.json(); }
+                const res = await fetch(`${serverPool[attemptIdx]}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(3000) });
+                if (res.ok) {
+                    currentServerIdx = attemptIdx;
+                    return await res.json();
+                }
             } catch (e) {}
         }
         return null;
     }
 
-    async function playVideo(id, title) {
-        currentId = id;
-        document.getElementById('player-overlay').style.display = 'block';
-        document.getElementById('v-title-display').innerText = title;
-        document.getElementById('video-frame').src = `${instances[currentIdx]}/embed/${id}?autoplay=1&local=true`;
-        
-        // Fetch detailed metadata
-        const data = await apiRequest(`videos/${id}`);
-        if (data) {
-            currentChannelId = data.authorId;
-            currentAuthorName = data.author;
-            document.getElementById('v-author-display').innerText = data.author;
-            document.getElementById('v-description').innerText = data.description;
-            document.getElementById('v-sub-count').innerText = data.subCountText + " subscribers";
-            document.getElementById('v-channel-pfp').src = data.authorThumbnails[0].url;
-            updateSubButton();
-        }
-    }
-
-    // --- Subscription Logic ---
-    function updateSubButton() {
-        const subs = JSON.parse(localStorage.getItem('mySubs') || "[]");
-        const btn = document.getElementById('v-sub-btn');
-        const isSubbed = subs.some(s => s.id === currentChannelId);
-        btn.innerText = isSubbed ? "Subscribed" : "Subscribe";
-        btn.className = isSubbed ? "sub-btn active" : "sub-btn";
-    }
-
-    function toggleSubscribe() {
-        let subs = JSON.parse(localStorage.getItem('mySubs') || "[]");
-        const index = subs.findIndex(s => s.id === currentChannelId);
-        
-        if (index > -1) {
-            subs.splice(index, 1);
-        } else {
-            subs.push({ id: currentChannelId, name: currentAuthorName, pfp: document.getElementById('v-channel-pfp').src });
-        }
-        
-        localStorage.setItem('mySubs', JSON.stringify(subs));
-        updateSubButton();
-    }
-
-    function showSubs() {
-        const subs = JSON.parse(localStorage.getItem('mySubs') || "[]");
-        const grid = document.getElementById('content-grid');
-        document.getElementById('view-title').innerText = "Your Subscriptions";
-        grid.innerHTML = subs.length ? "" : "<p>No subscriptions yet!</p>";
-        
-        subs.forEach(s => {
-            const card = document.createElement('div');
-            card.className = "nav-item";
-            card.style.display = "flex";
-            card.style.alignItems = "center";
-            card.style.gap = "10px";
-            card.innerHTML = `<img src="${s.pfp}" style="width:30px;height:30px;border-radius:50%"> <span>${s.name}</span>`;
-            card.onclick = () => alert("Feature: Loading channel videos...");
-            grid.appendChild(card);
-        });
-    }
-
-    // Standard Loading Functions
     async function loadTrending() {
         document.getElementById('view-title').innerText = "Trending";
-        const data = await apiRequest('trending');
-        renderVideos(data);
+        const data = await tryRequest('trending');
+        renderGrid(data);
     }
 
-    function renderVideos(videos) {
+    function renderGrid(videos) {
         const grid = document.getElementById('content-grid');
-        grid.innerHTML = "";
+        grid.innerHTML = videos ? "" : "<p>Servers under heavy load. Try again in a moment.</p>";
         videos?.forEach(v => {
             const card = document.createElement('div');
             card.className = "video-card";
-            card.onclick = () => playVideo(v.videoId, v.title);
-            card.innerHTML = `<img class="thumb" src="${v.videoThumbnails[0].url}"><div style="font-weight:bold;font-size:14px;margin-top:8px">${v.title}</div>`;
+            card.onclick = () => openPlayer(v.videoId, v.title);
+            card.innerHTML = `<img class="thumb" src="${v.videoThumbnails[0].url}">
+                              <div style="font-weight:bold; font-size:14px; margin-top:8px;">${v.title}</div>
+                              <div style="color:#888; font-size:12px;">${v.author}</div>`;
             grid.appendChild(card);
         });
+    }
+
+    async function openPlayer(id, title) {
+        currentVideoId = id;
+        document.getElementById('player-overlay').style.display = 'block';
+        document.getElementById('v-title').innerText = title;
+        updateView();
+    }
+
+    async function updateView() {
+        const frame = document.getElementById('video-frame');
+        const status = document.getElementById('status-bar');
+        const currentHost = serverPool[currentServerIdx];
+        
+        status.innerText = `Connecting to: ${new URL(currentHost).hostname}...`;
+        frame.src = `${currentHost}/embed/${currentVideoId}?autoplay=1&local=true`;
+        
+        // Fetch Metadata
+        const data = await tryRequest(`videos/${currentVideoId}`);
+        if (data) {
+            currentAuthorId = data.authorId;
+            document.getElementById('v-author').innerText = data.author;
+            document.getElementById('v-subs').innerText = data.subCountText + " subscribers";
+            document.getElementById('v-desc').innerText = data.description;
+            document.getElementById('v-pfp').src = data.authorThumbnails[0].url;
+            updateSubBtnUI();
+        }
+    }
+
+    function switchServer() {
+        currentServerIdx = (currentServerIdx + 1) % serverPool.length;
+        updateView();
+    }
+
+    function toggleSubscribe() {
+        let subs = JSON.parse(localStorage.getItem('userSubs') || "[]");
+        const idx = subs.findIndex(s => s.id === currentAuthorId);
+        if (idx > -1) subs.splice(idx, 1);
+        else subs.push({ id: currentAuthorId, name: document.getElementById('v-author').innerText });
+        localStorage.setItem('userSubs', JSON.stringify(subs));
+        updateSubBtnUI();
+    }
+
+    function updateSubBtnUI() {
+        const subs = JSON.parse(localStorage.getItem('userSubs') || "[]");
+        const isSubbed = subs.some(s => s.id === currentAuthorId);
+        const btn = document.getElementById('v-sub-btn');
+        btn.innerText = isSubbed ? "Subscribed" : "Subscribe";
+        btn.className = isSubbed ? "btn btn-sub active" : "btn btn-sub";
     }
 
     function closeVideo() {
@@ -177,8 +186,8 @@
 
     document.getElementById('search-input').onkeypress = async (e) => {
         if(e.key === 'Enter') {
-            const data = await apiRequest(`search?q=${encodeURIComponent(e.target.value)}`);
-            renderVideos(data);
+            const data = await tryRequest(`search?q=${encodeURIComponent(e.target.value)}`);
+            renderGrid(data);
         }
     };
 
