@@ -3,115 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Proxy - v2.0</title>
+    <title>ProxyTube - Channel Navigation</title>
     <style>
-        :root { --yt-black: #0f0f0f; --yt-red: #ff0000; --yt-text: #fff; }
-        body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; overflow-x: hidden; }
-        header { display: flex; align-items: center; padding: 10px 20px; background: var(--yt-black); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #222; }
-        #search-input { flex: 1; max-width: 500px; padding: 12px; border-radius: 20px 0 0 20px; border: 1px solid #333; background: #121212; color: white; margin-left: auto; }
-        #search-btn { padding: 10px 20px; border-radius: 0 20px 20px 0; border: 1px solid #333; background: #222; color: white; cursor: pointer; margin-right: auto; }
-        #content { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-        .video-card { cursor: pointer; transition: 0.2s; }
-        .video-card:hover { transform: translateY(-5px); }
+        :root { --yt-black: #0f0f0f; --yt-red: #ff0000; --yt-text: #fff; --sidebar-w: 240px; }
+        body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        header { display: flex; align-items: center; padding: 10px 20px; background: var(--yt-black); border-bottom: 1px solid #222; height: 56px; }
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Sidebar */
+        #sidebar { width: var(--sidebar-w); background: #0f0f0f; border-right: 1px solid #222; padding: 15px; overflow-y: auto; }
+        .sub-item { font-size: 14px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .sub-item:hover { background: #272727; }
+        
+        /* Content */
+        #content { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; overflow-y: auto; }
+        .video-card { cursor: pointer; }
         .thumb { width: 100%; border-radius: 12px; aspect-ratio: 16/9; background: #222; object-fit: cover; }
-        .v-title { font-weight: bold; margin-top: 10px; font-size: 14px; line-height: 1.2; height: 2.4em; overflow: hidden; }
-        #status { text-align: center; padding: 20px; color: #aaa; }
-        #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
-        iframe { width: 90%; max-width: 1000px; height: 60vh; border: 1px solid #333; border-radius: 12px; }
-        .close-btn { margin-bottom: 15px; padding: 10px 25px; background: var(--yt-red); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .v-title { font-weight: bold; font-size: 14px; margin-top: 10px; }
+
+        /* Fullscreen Player Overlay */
+        #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; overflow-y: auto; }
+        .player-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        #video-frame { width: 100%; aspect-ratio: 16/9; border-radius: 12px; border: none; background: #000; }
+        
+        /* Video Details Under Player */
+        .video-details { margin-top: 15px; }
+        .channel-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-bottom: 15px; border-bottom: 1px solid #333; }
+        .chan-info { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        #chan-logo { width: 45px; height: 45px; border-radius: 50%; background: #333; object-fit: cover; }
+        .subscribe-btn { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .description { background: #272727; padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 14px; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: bold;"><span style="color:red">▶</span> ProxyTube</div>
-    <input type="text" id="search-input" placeholder="Search YouTube...">
-    <button id="search-btn">🔍</button>
+    <div style="font-weight: bold; font-size: 20px; cursor: pointer;" onclick="loadTrending()">▶ ProxyTube</div>
+    <div style="flex:1; display:flex; justify-content:center;">
+        <input type="text" id="search-input" placeholder="Search" style="width:50%; padding:10px; border-radius:20px; border:1px solid #333; background:#121212; color:white;">
+    </div>
 </header>
 
-<div id="status">Connecting to YouTube...</div>
-<div id="content"></div>
+<div class="main-layout">
+    <div id="sidebar">
+        <h3 style="font-size: 16px; margin-top: 0;">Subscriptions</h3>
+        <div id="sub-list"></div>
+    </div>
+    <div id="content"></div>
+</div>
 
 <div id="player-overlay">
-    <button class="close-btn" onclick="closeVideo()">CLOSE VIDEO</button>
-    <iframe id="video-player" src="" allowfullscreen></iframe>
+    <div class="player-container">
+        <button style="background:none; border:none; color:white; cursor:pointer; font-size:18px; margin-bottom:10px;" onclick="closeVideo()">✕ Back</button>
+        <iframe id="video-frame" allowfullscreen></iframe>
+        <div class="video-details">
+            <h1 id="player-title" style="font-size: 20px; margin: 10px 0;"></h1>
+            <div class="channel-row">
+                <div class="chan-info" id="chan-link">
+                    <img id="chan-logo" src="" alt="">
+                    <div>
+                        <div id="player-chan-name" style="font-weight:bold;"></div>
+                        <div id="player-sub-count" style="font-size:12px; color:#aaa;"></div>
+                    </div>
+                </div>
+                <button class="subscribe-btn" id="sub-action-btn">Subscribe</button>
+            </div>
+            <div class="description" id="player-desc"></div>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Updated 2026 list: Removed unstable servers, added reliable ones
-    const instances = [
-        "https://inv.nadeko.net",
-        "https://invidious.nerdvpn.de",
-        "https://iv.melmac.space",
-        "https://invidious.no-logs.com"
-    ];
-    
+    const instances = ["https://inv.nadeko.net", "https://invidious.nerdvpn.de", "https://iv.melmac.space"];
     let currentInstance = instances[0];
+    let mySubs = JSON.parse(localStorage.getItem('yt-subs')) || [];
 
     async function fetchData(endpoint) {
         for (let url of instances) {
             try {
-                // local=true is often needed in 2026 to bypass "Content Unavailable"
-                const response = await fetch(`${url}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(5000) });
-                if (response.ok) {
-                    currentInstance = url; 
-                    return await response.json();
-                }
-            } catch (e) {
-                console.log(`Failed on ${url}, trying next...`);
-            }
+                const res = await fetch(`${url}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(4000) });
+                if (res.ok) { currentInstance = url; return await res.json(); }
+            } catch (e) {}
         }
-        document.getElementById('status').innerText = "All proxy servers are currently busy. Try again in 1 minute.";
         return null;
     }
 
     async function loadTrending() {
-        const videos = await fetchData('trending');
-        if (videos) renderVideos(videos);
+        document.getElementById('content').innerHTML = "Loading...";
+        const data = await fetchData('trending');
+        renderVideos(data);
     }
 
-    async function search() {
-        const query = document.getElementById('search-input').value;
-        if (!query) return;
-        document.getElementById('status').innerText = "Searching...";
-        const videos = await fetchData(`search?q=${encodeURIComponent(query)}`);
-        if (videos) renderVideos(videos);
+    async function playVideo(id) {
+        document.getElementById('player-overlay').style.display = 'block';
+        document.getElementById('video-frame').src = `${currentInstance}/embed/${id}?autoplay=1&local=true`;
+        
+        const vData = await fetchData(`videos/${id}`);
+        if (vData) {
+            document.getElementById('player-title').innerText = vData.title;
+            document.getElementById('player-chan-name').innerText = vData.author;
+            document.getElementById('player-sub-count').innerText = vData.subCountText + " subscribers";
+            document.getElementById('player-desc').innerText = vData.description;
+            
+            // Channel Logo - Using authorThumbnails from Video Object
+            const logoUrl = vData.authorThumbnails ? vData.authorThumbnails[vData.authorThumbnails.length - 1].url : '';
+            document.getElementById('chan-logo').src = logoUrl;
+
+            // Link to Channel Page
+            document.getElementById('chan-link').onclick = () => {
+                closeVideo();
+                loadChannel(vData.authorId);
+            };
+            
+            const btn = document.getElementById('sub-action-btn');
+            btn.onclick = (e) => {
+                e.stopPropagation(); // Prevent triggering the channel link
+                addSubscription(vData.authorId, vData.author);
+            };
+            btn.innerText = mySubs.some(s => s.id === vData.authorId) ? "Subscribed" : "Subscribe";
+        }
     }
 
-    function renderVideos(videos) {
-        document.getElementById('status').style.display = 'none';
-        const container = document.getElementById('content');
-        container.innerHTML = '';
-        videos.forEach(v => {
-            if (!v.videoId) return;
-            const card = document.createElement('div');
-            card.className = 'video-card';
-            card.onclick = () => playVideo(v.videoId);
-            card.innerHTML = `
-                <img class="thumb" src="${v.videoThumbnails ? v.videoThumbnails[0].url : ''}" onerror="this.src='https://via.placeholder.com/320x180?text=No+Thumbnail'">
-                <div class="v-title">${v.title}</div>
-                <div style="color:#aaa; font-size:12px; margin-top:5px;">${v.author}</div>
-            `;
-            container.appendChild(card);
+    function addSubscription(id, name) {
+        if (!mySubs.some(s => s.id === id)) {
+            mySubs.push({id, name});
+            localStorage.setItem('yt-subs', JSON.stringify(mySubs));
+            renderSubList();
+            document.getElementById('sub-action-btn').innerText = "Subscribed";
+        }
+    }
+
+    function removeSub(id) {
+        mySubs = mySubs.filter(s => s.id !== id);
+        localStorage.setItem('yt-subs', JSON.stringify(mySubs));
+        renderSubList();
+    }
+
+    function renderSubList() {
+        const list = document.getElementById('sub-list');
+        list.innerHTML = "";
+        mySubs.forEach(sub => {
+            const div = document.createElement('div');
+            div.className = 'sub-item';
+            div.innerHTML = `<span onclick="loadChannel('${sub.id}')">${sub.name}</span> <span onclick="removeSub('${sub.id}')" style="color:#666">×</span>`;
+            list.appendChild(div);
         });
     }
 
-    function playVideo(id) {
-        // Added &local=true to the embed to help bypass Google's blocks
-        document.getElementById('video-player').src = `${currentInstance}/embed/${id}?autoplay=1&local=true`;
-        document.getElementById('player-overlay').style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+    async function loadChannel(id) {
+        document.getElementById('content').innerHTML = "Loading Channel Videos...";
+        const data = await fetchData(`channels/${id}`);
+        if (data && data.latestVideos) {
+            renderVideos(data.latestVideos);
+        } else {
+            document.getElementById('content').innerHTML = "Failed to load channel content.";
+        }
+    }
+
+    function renderVideos(videos) {
+        const container = document.getElementById('content');
+        container.innerHTML = "";
+        videos?.forEach(v => {
+            container.innerHTML += `
+                <div class="video-card" onclick="playVideo('${v.videoId}')">
+                    <img class="thumb" src="${v.videoThumbnails[0].url}">
+                    <div class="v-title">${v.title}</div>
+                    <div style="color:#aaa; font-size:12px; margin-top:4px;">${v.author}</div>
+                </div>`;
+        });
     }
 
     function closeVideo() {
         document.getElementById('player-overlay').style.display = 'none';
-        document.getElementById('video-player').src = '';
-        document.body.style.overflow = 'auto';
+        document.getElementById('video-frame').src = '';
     }
 
-    document.getElementById('search-btn').onclick = search;
-    document.getElementById('search-input').onkeypress = (e) => { if(e.key === 'Enter') search(); };
-    
+    document.getElementById('search-input').onkeypress = async (e) => {
+        if(e.key === 'Enter') {
+            const data = await fetchData(`search?q=${encodeURIComponent(e.target.value)}`);
+            renderVideos(data);
+        }
+    };
+
+    renderSubList();
     loadTrending();
 </script>
 
