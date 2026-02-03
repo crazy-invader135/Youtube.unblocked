@@ -3,144 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxyTube v3.0 - High Reliability</title>
+    <title>ProxyTube v3.5 - High-Speed Loader</title>
     <style>
-        :root { --yt-black: #0f0f0f; --yt-red: #ff0000; --yt-text: #fff; --sidebar-w: 240px; }
-        body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { --yt-black: #0f0f0f; --yt-red: #ff0000; --yt-text: #fff; }
+        body { background: var(--yt-black); color: var(--yt-text); font-family: sans-serif; margin: 0; }
         
-        header { display: flex; align-items: center; padding: 10px 20px; background: var(--yt-black); border-bottom: 1px solid #222; height: 56px; flex-shrink: 0; }
-        .main-layout { display: flex; flex: 1; overflow: hidden; }
+        /* Player UI */
+        #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; }
+        .player-content { max-width: 900px; margin: 20px auto; padding: 10px; }
+        .vid-box { position: relative; width: 100%; aspect-ratio: 16/9; background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
         
-        /* Sidebar */
-        #sidebar { width: var(--sidebar-w); background: #0f0f0f; border-right: 1px solid #222; padding: 15px; overflow-y: auto; flex-shrink: 0; }
-        .nav-item { padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; font-weight: bold; }
-        .nav-item:hover { background: #272727; }
-
-        /* Content Area */
-        #main-view { flex: 1; overflow-y: auto; padding: 20px; }
-        #content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .video-card { cursor: pointer; transition: transform 0.2s; }
-        .video-card:hover { transform: scale(1.02); }
-        .thumb { width: 100%; border-radius: 12px; aspect-ratio: 16/9; background: #222; object-fit: cover; }
-        .v-title { font-weight: bold; font-size: 14px; margin-top: 10px; }
-
-        /* Advanced Player Overlay */
-        #player-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; overflow-y: auto; }
-        .player-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
-        .video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #111; border-radius: 12px; overflow: hidden; }
-        #video-frame { width: 100%; height: 100%; border: none; }
+        /* The Iframe Player */
+        iframe { width: 100%; height: 100%; border: none; }
         
-        /* Status Bar */
-        #player-status { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; font-size: 12px; color: #0f0; }
-        .retry-btn { background: var(--yt-red); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        /* Loader Overlay */
+        #loader-status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; text-align: center; pointer-events: none; }
+        .btn-row { margin-top: 15px; display: flex; gap: 10px; }
+        .p-btn { background: #222; color: white; border: 1px solid #444; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .p-btn:hover { background: #333; }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="font-weight: bold; font-size: 20px; cursor: pointer;" onclick="loadTrending()">▶ ProxyTube Pro</div>
-    <div style="flex:1; display:flex; justify-content:center;">
-        <input type="text" id="search-input" placeholder="Search videos..." style="width:50%; padding:10px; border-radius:20px; border:1px solid #333; background:#121212; color:white;">
-    </div>
-</header>
-
-<div class="main-layout">
-    <div id="sidebar">
-        <div class="nav-item" onclick="loadTrending()">🔥 Trending</div>
-        <div class="nav-item" onclick="alert('History & Subs preserved!')">📁 Library</div>
-    </div>
-    <div id="main-view">
-        <h2 id="view-title">Trending</h2>
-        <div id="content-grid"></div>
-    </div>
-</div>
-
 <div id="player-overlay">
-    <div class="player-container">
-        <button style="background:none; border:none; color:white; cursor:pointer; font-size:18px; margin-bottom:10px;" onclick="closeVideo()">✕ Close Player</button>
-        <div class="video-wrapper">
-            <div id="player-status">Connected</div>
+    <div class="player-content">
+        <button class="p-btn" onclick="closeVideo()">✕ Close</button>
+        <div class="vid-box">
+            <div id="loader-status">Initializing Piped Stream...</div>
             <iframe id="video-frame" allowfullscreen allow="autoplay"></iframe>
         </div>
-        <div id="player-meta" style="margin-top:20px;">
-            <h1 id="v-title-display" style="font-size: 22px;"></h1>
-            <p id="v-author-display" style="color: #aaa;"></p>
-            <button class="retry-btn" onclick="retryDifferentInstance()">Video not loading? Try another server</button>
+        <div class="btn-row">
+            <button class="p-btn" style="background:var(--yt-red); border:none;" onclick="switchPipedInstance()">Video Stuck? Switch Server</button>
+            <button class="p-btn" onclick="openOnYoutube()">Open on YouTube (Source)</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Expanded list of high-uptime instances
-    const instances = [
-        "https://inv.nadeko.net",
-        "https://invidious.nerdvpn.de",
-        "https://iv.melmac.space",
-        "https://invidious.privacyredirect.com",
-        "https://yewtu.be",
-        "https://invidious.lunar.icu"
+    // These are Piped instances, which usually handle video streams better than Invidious
+    const pipedInstances = [
+        "https://pipedapi.kavin.rocks",
+        "https://api.piped.victr.me",
+        "https://piped-api.lunar.icu",
+        "https://pipedapi.leptons.xyz"
     ];
-    
-    let currentInstanceIdx = 0;
-    let currentVideoId = "";
 
-    async function apiRequest(endpoint) {
-        // Tries instances one by one until one works
-        for (let i = 0; i < instances.length; i++) {
-            let idx = (currentInstanceIdx + i) % instances.length;
-            try {
-                const response = await fetch(`${instances[idx]}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(3000) });
-                if (response.ok) {
-                    currentInstanceIdx = idx; // Update to the working one
-                    return await response.json();
-                }
-            } catch (e) { continue; }
-        }
-        return null;
-    }
+    let currentPipedIdx = 0;
+    let activeVideoId = "";
 
-    async function loadTrending() {
-        document.getElementById('content-grid').innerHTML = "Loading...";
-        const data = await apiRequest('trending');
-        renderVideos(data);
-    }
-
-    function renderVideos(videos) {
-        const grid = document.getElementById('content-grid');
-        grid.innerHTML = "";
-        videos?.forEach(v => {
-            const card = document.createElement('div');
-            card.className = "video-card";
-            card.onclick = () => playVideo(v.videoId, v.title, v.author);
-            card.innerHTML = `
-                <img class="thumb" src="${v.videoThumbnails[0].url}">
-                <div class="v-title">${v.title}</div>
-                <div style="color:#aaa; font-size:12px; margin-top:4px;">${v.author}</div>
-            `;
-            grid.appendChild(card);
-        });
-    }
-
-    function playVideo(id, title, author) {
-        currentVideoId = id;
+    function playVideo(id) {
+        activeVideoId = id;
         document.getElementById('player-overlay').style.display = 'block';
-        document.getElementById('v-title-display').innerText = title;
-        document.getElementById('v-author-display').innerText = author;
-        updateFrame();
+        loadPipedStream();
     }
 
-    function updateFrame() {
-        const status = document.getElementById('player-status');
-        const instance = instances[currentInstanceIdx];
-        status.innerText = "Server: " + new URL(instance).hostname;
+    function loadPipedStream() {
+        const instance = pipedInstances[currentPipedIdx];
+        const status = document.getElementById('loader-status');
+        const frame = document.getElementById('video-frame');
         
-        // Use 'local=true' and 'quality=dash' which are more reliable for proxied playback
-        document.getElementById('video-frame').src = `${instance}/embed/${currentVideoId}?autoplay=1&local=true&dark_mode=true`;
+        status.style.display = 'block';
+        status.innerText = "Connecting to " + new URL(instance).hostname + "...";
+        
+        // Piped uses a different embed URL structure that is often cleaner
+        // We use the player link from the instance
+        const playerUrl = instance.replace('api.', '') + "/embed/" + activeVideoId;
+        frame.src = playerUrl;
+
+        // Auto-hide status after 4 seconds (assuming it loaded)
+        setTimeout(() => { status.style.display = 'none'; }, 4000);
     }
 
-    function retryDifferentInstance() {
-        currentInstanceIdx = (currentInstanceIdx + 1) % instances.length;
-        updateFrame();
+    function switchPipedInstance() {
+        currentPipedIdx = (currentPipedIdx + 1) % pipedInstances.length;
+        loadPipedStream();
     }
 
     function closeVideo() {
@@ -148,15 +84,13 @@
         document.getElementById('video-frame').src = "";
     }
 
-    document.getElementById('search-input').onkeypress = async (e) => {
-        if(e.key === 'Enter') {
-            document.getElementById('view-title').innerText = "Search Results";
-            const data = await apiRequest(`search?q=${encodeURIComponent(e.target.value)}`);
-            renderVideos(data);
-        }
-    };
+    function openOnYoutube() {
+        window.open("https://youtube.com/watch?v=" + activeVideoId, "_blank");
+    }
 
-    loadTrending();
+    // Connect this to your existing video cards:
+    // Example: <div class="video-card" onclick="playVideo('VIDEO_ID_HERE')">
 </script>
+
 </body>
 </html>
