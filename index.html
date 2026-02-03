@@ -38,12 +38,12 @@
 </div>
 
 <script>
-    // List of working 2026 Invidious instances
+    // Updated 2026 list: Removed unstable servers, added reliable ones
     const instances = [
         "https://inv.nadeko.net",
-        "https://invidious.lunar.icu",
+        "https://invidious.nerdvpn.de",
         "https://iv.melmac.space",
-        "https://invidious.projectsegfau.lt"
+        "https://invidious.no-logs.com"
     ];
     
     let currentInstance = instances[0];
@@ -51,9 +51,10 @@
     async function fetchData(endpoint) {
         for (let url of instances) {
             try {
+                // local=true is often needed in 2026 to bypass "Content Unavailable"
                 const response = await fetch(`${url}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(5000) });
                 if (response.ok) {
-                    currentInstance = url; // Update to the working one
+                    currentInstance = url; 
                     return await response.json();
                 }
             } catch (e) {
@@ -96,7 +97,8 @@
     }
 
     function playVideo(id) {
-        document.getElementById('video-player').src = `${currentInstance}/embed/${id}?autoplay=1`;
+        // Added &local=true to the embed to help bypass Google's blocks
+        document.getElementById('video-player').src = `${currentInstance}/embed/${id}?autoplay=1&local=true`;
         document.getElementById('player-overlay').style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
