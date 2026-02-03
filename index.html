@@ -71,12 +71,12 @@
 </div>
 
 <script>
-    // Expanded list of high-uptime instances
+    // Updated 2026 Stable Instance List
     const instances = [
         "https://inv.nadeko.net",
-        "https://invidious.nerdvpn.de",
+        "https://invidious.f5.si",
         "https://iv.melmac.space",
-        "https://invidious.privacyredirect.com",
+        "https://invidious.nerdvpn.de",
         "https://yewtu.be",
         "https://invidious.lunar.icu"
     ];
@@ -85,13 +85,12 @@
     let currentVideoId = "";
 
     async function apiRequest(endpoint) {
-        // Tries instances one by one until one works
         for (let i = 0; i < instances.length; i++) {
             let idx = (currentInstanceIdx + i) % instances.length;
             try {
                 const response = await fetch(`${instances[idx]}/api/v1/${endpoint}`, { signal: AbortSignal.timeout(3000) });
                 if (response.ok) {
-                    currentInstanceIdx = idx; // Update to the working one
+                    currentInstanceIdx = idx; 
                     return await response.json();
                 }
             } catch (e) { continue; }
@@ -134,7 +133,6 @@
         const instance = instances[currentInstanceIdx];
         status.innerText = "Server: " + new URL(instance).hostname;
         
-        // Use 'local=true' and 'quality=dash' which are more reliable for proxied playback
         document.getElementById('video-frame').src = `${instance}/embed/${currentVideoId}?autoplay=1&local=true&dark_mode=true`;
     }
 
